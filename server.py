@@ -19,6 +19,15 @@ def broadcast(message):
     for client in clients:
         client.send(f"[{now()}] {message}".encode())
 
+
+"""
+handle() passer på at hvis en meldling blir sendt, så kommer den til serverern. client.recv(1024) lytter bare etter
+meldinger sendt fra client. det er også noen if statements som passer på om kommandoer kommer inn, og gjør det de skal.
+hvis det ikke var en kommando så sendes meldingen.
+
+Noe innteresant er at hvis en bruker dissconnecter så telles dette som en error. Dette kan faktisk brukes til å finne
+ut om en bruker må eller har DC'et. når en error oppstår, blir handleren drept. og client og nick oppdatert.
+"""
 def handle(client):
     while True:
         try:
@@ -49,6 +58,12 @@ def handle(client):
             nicknames.remove(nickname)
             break
 
+
+"""
+recieve leter kun etter nye clients og henter ut nickname. etterpå legger den de til i nicknames[] og clients[].
+de har begge samme indeks siden de legges til sammtidig. kunne lagdt objekter her også. starter en new "instance"
+eller en handler.
+"""
 def recieve():
     while True:
         client, address = server.accept()
@@ -67,14 +82,29 @@ def recieve():
         thread = threading.Thread(target=handle, args=(client,))
         thread.start()
 
+# tid i TMS format
 def now():
     # current time
     t = time.localtime()
     return time.strftime("%H:%M:%S", t)
 
+
+# gets nick from client. Dette gjøres ved å bruke client sin index siden den er det samme som nicknames.
 def getnickfromclient(client):
     return nicknames[clients.index(client)]
 
+"""
+Hovedspillet. TLDR: tar to brukere fra queue som input, og venter på MOVE som blir sendt hvis brukeren skriver
+/move. client.write() leter alltid etter ord som starter på / og sender parametere fra kommandoer direkte uten
+brukernavn. Disse legges som et objekt Move() i moves[]. det ligger en for løkke som ser etter alle moves som matcher
+med en client ip i game. dette betyr i praksis at flere spillere kan spille samtidig. 
+
+suspencemaker() skriver bare ut litt moroe ting for å lage litt "suspence". kun kosmetisk, kunne egentlig være client
+side for å redusere load osv. men men.
+
+sjekker så med 6 if statements om hvordan spillet endet, hvis spillet endet uavgjordt returner, hvis ikke skrives
+vinnerern ut.
+"""
 def game(p1, p2):
     broadcast(f"{getnickfromclient(p1)} and {getnickfromclient(p2)} are playing Roshambo!")
     rpsqueue.clear()
@@ -116,6 +146,7 @@ def game(p1, p2):
         broadcast("Rock crushes Scissors!")
     if winner == -1:
         broadcast(f"Game between {getnickfromclient(p1)} and {getnickfromclient(p2)} ended in a draw!")
+        return
     broadcast(
         f"{getnickfromclient(p1)} played against {getnickfromclient(p2)} where"
         f" {winner} Won!")
@@ -151,23 +182,34 @@ def suspencemaker(p1,p1m,p2,p2m):
     p2.send(f"They Picked {move1}".encode())
     time.sleep(0.25)
 
-
+"""
+r = Rock
+p = Paper
+s = Scissors
+ville bare ha en separat kommando for dette, sparer meg 2 linjer men så så
+"""
 def movetostring(move):
     if (move == "r"): return "Rock"
     if (move == "p"): return "Paper"
     if (move == "s"): return "Scissors"
 
 
+""""
+noen ganger må samme melding sendes til begge spillerne, det er fint å ha en kommando som gjør dette"""
 def sendbothplayers(p1,p2,string):
     p1.send(string.encode())
     p2.send(string.encode())
 
-
+""""
+en class Move. inneholder brukeren og trekket. Kunne gjordt dette for nickname også men jeg er lat og allerede har kodet
+det og er livredd det skal gå i stykker.
+"""
 class Move:
     def __init__(self, user, move):
         self.user = user
         self.move = move
 
 
+# starter første recieve() med en melding til konsoll for å vise at alt er 200 ok
 print("Server is listening...")
 recieve()

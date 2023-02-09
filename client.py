@@ -3,8 +3,14 @@ from socket import *
 
 nickname = input("Choose a nickname: ")
 
+# AF_INET = Internet domain, SOCK_STREAM = TCP. TCP er slow but steady i forhold til UDP.
 client = socket(AF_INET,SOCK_STREAM)
 client.connect(('127.0.0.1', 55555))
+
+"""
+recieve lytter etter meldinger fra server. Server er definert som client i denne situasjonen siden den oppfører seg
+som en klient. hvis meldingen fra server er NICK, så autosendes nickname.
+"""
 
 def receive():
     while True:
@@ -19,6 +25,13 @@ def receive():
             client.close()
             break
 
+
+"""
+write() sender ting fra brukeren til serveren. message er formatert først, så deformatert. Dette er sykt teit og skaper
+2000 problemer men jeg er veldig sta. 
+Leser input, sjekker om det er en kommando, hvis det, sjekk hvilken, hvis ikke, send menldingen. det er en stor try
+og jeg har ikke fått trigget den enda, men den er fin å ha hvis ting går skjeis i guess.
+"""
 def write():
     while True:
         # leser etter input fra brukeren, setter så nicknamet forran
@@ -43,6 +56,7 @@ def write():
             print(f"ERROR: Command ({message}) is invalid!")
         # hvis kommandoen ikke finnes, eller er skrevet uten parameter vil denne exception skrives ut.
 
+# Validerer og sender trekk i MOVE format.
 def changemove(move):
     if move not in ("r","p","s"):
         print("Invalid move")
@@ -50,6 +64,8 @@ def changemove(move):
     rpsmove = f"MOVE {move}"
     client.send(rpsmove.encode())
 
+
+# Starter 2 threads, en for recieve, og en for write
 receive_thread = threading.Thread(target=receive)
 receive_thread.start()
 
