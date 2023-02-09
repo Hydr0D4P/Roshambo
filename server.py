@@ -151,15 +151,7 @@ def game(p1, p2):
         f"{getnickfromclient(p1)} played against {getnickfromclient(p2)} where"
         f" {winner} Won!")
 
-    for move in moves:
-        if move.user == p1 or move.user == p2:
-            moves.remove(move)
-            break
-        if move.user == p2:
-            moves.remove(move)
-    for move in moves:
-        if move.user == p2:
-            moves.remove(move)
+    moves.clear()
 
 
 def suspencemaker(p1,p1m,p2,p2m):
